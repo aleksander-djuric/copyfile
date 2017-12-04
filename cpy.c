@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 }
 
 void cpcb(cp_state *s) {
-	int pcnt = (s->cp_cur * 100. / s->cp_top);
+	int pcnt = ((s->cp_cur + 1) * 100. / (s->cp_top + 1));
 
 	if (!(pcnt % 10))
 		printf("%s %s to %s %d%%\n", s->move_flag ? "moving" : "copying",

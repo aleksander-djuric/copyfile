@@ -112,7 +112,9 @@ int copy_file(const char *src, const char *dst, int move_flag, cp_callback cb_fu
 	if (move_flag) {
 		rc = rename(src, dst_path);
 		if (rc < 0 && errno != EXDEV) return rc;
+		cps.cp_cur = size;
 		if (cb_func) cb_func(&cps); // update status
+		return 0;
 	}
 
 	if ((fdin = open(src, O_RDONLY)) < 0) return -1;
