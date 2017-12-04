@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 }
 
 void cpcb(cp_state *s) {
-	int pcnt = ((s->cp_cur + 1) * 100. / (s->cp_top + 1));
+	int pcnt = (s->cp_cur * 100. / (s->cp_top + 1));
 
 	if (!(pcnt % 10))
 		printf("%s %s to %s %d%%\n", s->move_flag ? "moving" : "copying",
@@ -60,11 +60,10 @@ void cpcb(cp_state *s) {
 }
 
 void usage(char *name) {
-	printf("\rUsage:\t%s [-hmv] input_file output_path\n\n", name);
+	printf("\rUsage:\t%s [-mv] source_file target_file\n", name);
+	printf("\t%s [-mv] source_file target_directory\n", name);
+	printf("\t%s [-mv] source_directory target_directory\n\n", name);
 
-	printf("\t-h\tprint this help\n");
 	printf("\t-m\tmove mode\n");
 	printf("\t-v\tbe verbose\n\n");
-
-	printf("Project site: https://github.com/xxald/copyfile\n");
 } // usage

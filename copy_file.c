@@ -22,7 +22,7 @@ int copy_data(int fdin, int fdout, void *buffer, size_t buffer_size, cp_callback
 	ufdin.events = POLLIN | POLLRDNORM; // readable
 	ufdout.fd = fdout;
 	ufdout.events = POLLOUT | POLLWRNORM; // writable
-	curpos = 0;
+	curpos = 1; // handle zero size files
 
 	while ((rsize = read(fdin, buffer, buffer_size))) {
 		if (rsize < 0) {
@@ -52,6 +52,8 @@ int copy_data(int fdin, int fdout, void *buffer, size_t buffer_size, cp_callback
 		}
 	}
 
+	cps->cp_cur = curpos;
+	if (cb_func) cb_func(cps);
 	return 0;
 }
 
@@ -59,7 +61,7 @@ int copy_file(const char *src, const char *dst, int move_flag, cp_callback cb_fu
 	char src_path[PATH_MAX];
 	char dst_path[PATH_MAX];
 	cp_state cps;
-	struct stat st;
+	struct stat ss, ds;
 	void *buffer = NULL;
 	const char *p;
 	mode_t mode;
@@ -68,19 +70,22 @@ int copy_file(const char *src, const char *dst, int move_flag, cp_callback cb_fu
 
 	if (*src == '\0' || *dst == '\0') return 0;
 
-	stat(src, &st);
-	size = st.st_size;
-	mode = st.st_mode;
+	stat(src, &ss);
+	size = ss.st_size;
+	mode = ss.st_mode;
 
-	// get file name
+	// get source file name
 	p = src + strlen(src) - 1;
 	while (p > src && *p == '/') p--;
 	if ((p = strrchr(src, '/')) == 0) p = src;
 		else p++;
 
-	snprintf(dst_path, PATH_MAX, "%s/%s", dst, p);
+	// build destination path
+	if (stat(dst, &ds) == 0 && S_ISDIR(ds.st_mode))
+		snprintf(dst_path, PATH_MAX, "%s/%s", dst, p);
+	else strncpy(dst_path, dst, PATH_MAX-1);
 
-	if (S_ISDIR(st.st_mode)) {
+	if (S_ISDIR(ss.st_mode)) {
 		DIR *src_dir;
 
 		if (mkdir(dst_path, mode) < 0 && errno != EEXIST) return -1;
@@ -108,11 +113,12 @@ int copy_file(const char *src, const char *dst, int move_flag, cp_callback cb_fu
 	cps.move_flag = move_flag;
 	cps.cp_top = size;
 	cps.cp_cur = 0;
+	if (cb_func) cb_func(&cps);
 
 	if (move_flag) {
 		rc = rename(src, dst_path);
 		if (rc < 0 && errno != EXDEV) return rc;
-		cps.cp_cur = size;
+		cps.cp_cur = size + 1; // handle zero size files
 		if (cb_func) cb_func(&cps); // update status
 		return 0;
 	}
