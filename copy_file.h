@@ -12,18 +12,6 @@
 #ifndef _COPY_FILE_H
 #define _COPY_FILE_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/poll.h>
-#include <sys/stat.h>
-#include <string.h>
-#include <dirent.h>
-#include <errno.h>
-#include <locale.h>
-
 #define READ_TIMEOUT 60000
 #define WRITE_TIMEOUT 60000
 
@@ -31,16 +19,24 @@
 #define PATH_MAX 1024
 #endif
 
+typedef enum {
+	CP_MODE_COPY,
+	CP_MODE_MOVE,
+	CP_MODE_REMOVE
+} cp_flags;
+
 typedef struct {
 	const char *src;
 	const char *dst;
-	int move_flag;
-	int cp_top;
-	int cp_cur;
+	mode_t mode;
+	size_t size;
+	size_t curpos;
+	int func;
 } cp_state;
 
 typedef void (*cp_callback)(cp_state *s);
 
-int copy_file(const char *src, const char *dst, int move_flag, cp_callback cpcb);
+int copy_file(const char *src, const char *dst, int flags, cp_callback cpcb);
+int remove_file(const char *path, int flags, cp_callback cpcb);
 
 #endif // _COPY_FILE_H

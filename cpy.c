@@ -9,6 +9,7 @@
  *
  */
 
+#include "cpy.h"
 #include "copy_file.h"
 
 void cpcb(cp_state *s);
@@ -17,24 +18,23 @@ void usage(char *name);
 int main(int argc, char *argv[]) {
 	cp_callback cpcb_ptr = NULL;
 	char c, *src, *dst;
-	int move_flag = 0;
-	int rc = 0;
+	int cp_func = CP_MODE_COPY;
+	int nfiles, rc = 0;
 
 	setlocale(LC_ALL, "");
 
-	if (argc > 2) {
-		src = argv[argc-2];
-		dst = argv[argc-1];
-		argc -= 2;
-	} else {
+	if (argc < 2) {
 		usage(argv[0]);
 		return 0;
 	}
 
-	while ((c = getopt(argc, argv, "hmv")) != -1)
+	while ((c = getopt(argc, argv, "rmv")) != -1)
 	switch (c) {
+		case 'r': // remove mode
+			cp_func = CP_MODE_REMOVE;
+			break;
 		case 'm': // move mode
-			move_flag = 1;
+			cp_func = CP_MODE_MOVE;
 			break;
 		case 'v': // verbose mode
 			cpcb_ptr = cpcb;
@@ -45,25 +45,44 @@ int main(int argc, char *argv[]) {
 			return 0;
 	}
 
-	if ((rc = copy_file(src, dst, move_flag, cpcb_ptr)) < 0)
-		printf("copy file error %s\n", strerror(errno));
+	nfiles = argc - optind;
+	if (nfiles == 2) {
+		src = argv[optind++];
+		dst = argv[optind++];
+		rc = copy_file(src, dst, cp_func, cpcb_ptr);
+	} else if (nfiles == 1 && cp_func == CP_MODE_REMOVE) {
+		src = argv[optind++];
+		rc = remove_file(src, cp_func, cpcb_ptr);
+	} else {
+		usage(argv[0]);
+		return -1;
+	}
 
 	return rc;
 }
 
 void cpcb(cp_state *s) {
-	int pcnt = (s->cp_cur * 100. / (s->cp_top + 1));
+	int pcnt = (s->curpos * 100. / (s->size + 1));
 
-	if (!(pcnt % 10))
-		printf("%s %s to %s %d%%\n", s->move_flag ? "moving" : "copying",
-			s->src, s->dst, pcnt);
+	if ((pcnt % 10)) return;
+
+	if (s->func == CP_MODE_REMOVE)
+		printf("removing: %s %d%%\n", s->src, pcnt);
+	else if (s->func == CP_MODE_MOVE)
+		printf("moving: %s to %s %d%%\n", s->src, s->dst, pcnt);
+	else if (s->func == CP_MODE_COPY)
+		printf("copying: %s to %s %d%%\n", s->src, s->dst, pcnt);
+	else return;
 }
 
 void usage(char *name) {
 	printf("\rUsage:\t%s [-mv] source_file target_file\n", name);
 	printf("\t%s [-mv] source_file target_directory\n", name);
-	printf("\t%s [-mv] source_directory target_directory\n\n", name);
+	printf("\t%s [-mv] source_directory target_directory\n", name);
+	printf("\t%s [-rv] file\n", name);
+	printf("\t%s [-rv] directory\n\n", name);
 
 	printf("\t-m\tmove mode\n");
+	printf("\t-r\tremove mode\n");
 	printf("\t-v\tbe verbose\n\n");
 } // usage
