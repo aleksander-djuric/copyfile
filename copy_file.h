@@ -26,8 +26,8 @@ typedef enum {
 } cp_flags;
 
 typedef struct {
-	const char *src;
-	const char *dst;
+	char *src;
+	char *dst;
 	mode_t mode;
 	size_t size;
 	size_t curpos;
@@ -36,7 +36,6 @@ typedef struct {
 
 typedef void (*cp_callback)(cp_state *s);
 
-int copy_file(const char *src, const char *dst, int flags, cp_callback cpcb);
-int remove_file(const char *path, int flags, cp_callback cpcb);
+int copy_file(char *src, char *dst, int flags, cp_callback cpcb);
 
 #endif // _COPY_FILE_H

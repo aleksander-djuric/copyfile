@@ -19,7 +19,7 @@ int main(int argc, char *argv[]) {
 	cp_callback cpcb_ptr = NULL;
 	char c, *src, *dst;
 	int cp_func = CP_MODE_COPY;
-	int nfiles, rc = 0;
+	int nfiles;
 
 	setlocale(LC_ALL, "");
 
@@ -46,19 +46,19 @@ int main(int argc, char *argv[]) {
 	}
 
 	nfiles = argc - optind;
+
 	if (nfiles == 2) {
 		src = argv[optind++];
 		dst = argv[optind++];
-		rc = copy_file(src, dst, cp_func, cpcb_ptr);
-	} else if (nfiles == 1 && cp_func == CP_MODE_REMOVE) {
+	} else if (nfiles == 1) {
 		src = argv[optind++];
-		rc = remove_file(src, cp_func, cpcb_ptr);
+		dst = NULL;
 	} else {
 		usage(argv[0]);
 		return -1;
 	}
 
-	return rc;
+	return copy_file(src, dst, cp_func, cpcb_ptr);
 }
 
 void cpcb(cp_state *s) {
